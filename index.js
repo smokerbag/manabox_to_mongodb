@@ -16,6 +16,7 @@ let MagicCard = null;
 let MagicCollectionSchema = null;
 let MagicCollection = null;
 let totalCards = 0;
+let uniqueCards = 0;
 let totalPrice = 0;
 
 async function exit(err) {
@@ -79,6 +80,7 @@ async function saveCollection() {
   const collection = new MagicCollection({
     value: totalPrice,
     total: totalCards,
+    totalUnique: uniqueCards,
     updated: new Date()
   });
   const res = await collection.save();
@@ -115,6 +117,7 @@ async function processBatch(records) {
       newCard.rarity = card.rarity;
       newCard.layout = card.layout;
       totalPrice += newCard.price * newCard.quantity;
+      totalCards = totalCards + Number(newCard.quantity);
       if (card.image_uris) {
         newCard.images = {
           front: {
@@ -154,10 +157,10 @@ async function processRecords(records) {
   for (let i = 0; i < records.length; i += BATCH_SIZE) {
     const batch = records.slice(i, i + BATCH_SIZE);
     const n = await processBatch(batch);
-    totalCards += n;
+    uniqueCards += n;
     await new Promise(resolve => setTimeout(resolve, SCRYFALL_TIME_LIMIT));
   }
-  console.log(`Processed ${totalCards} cards total value ${formatCurrency(totalPrice/100)}`);
+  console.log(`Processed ${uniqueCards} cards total value ${formatCurrency(totalPrice/100)}`);
 
   await saveCollection();
 }
@@ -167,6 +170,10 @@ async function connectToDb() {
 
   MagicCollectionSchema = new mongoose.Schema({
     total: {
+      type: 'Number',
+      required: true
+    },
+    totalUnique: {
       type: 'Number',
       required: true
     },
