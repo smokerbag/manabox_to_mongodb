@@ -15,9 +15,12 @@ let MagicCardSchema = null;
 let MagicCard = null;
 let MagicCollectionSchema = null;
 let MagicCollection = null;
+let MagicSetSchema = null;
+let MagicSet = null;
 let totalCards = 0;
 let uniqueCards = 0;
 let totalPrice = 0;
+let sets = [];
 
 async function exit(err) {
   console.error('Failed to import data');
@@ -86,6 +89,18 @@ async function saveCollection() {
   const res = await collection.save();
 }
 
+async function saveSets() {
+  console.log('Saving sets');
+  const res = await MagicSet.insertMany(sets);
+}
+
+function updateSets(card) {
+  const f = sets.find((s) => s.code === card.setCode);
+  if (!f) {
+    sets.push({ code: card.setCode, name: card.setName });
+  }
+}
+
 async function processBatch(records) {
   console.log(`Processing batch of ${records.length}`);
 
@@ -142,6 +157,7 @@ async function processBatch(records) {
           }
         }
       }
+      updateSets(newCard);
       cards.push(newCard);
     }
 
@@ -163,10 +179,24 @@ async function processRecords(records) {
   console.log(`Processed ${uniqueCards} cards total value ${formatCurrency(totalPrice/100)}`);
 
   await saveCollection();
+
+  await saveSets();
 }
 
 async function connectToDb() {
   db = await mongoose.connect(MONGODB_URI);
+
+  MagicSetSchema = new mongoose.Schema({
+    code: {
+      type: 'String',
+      required: true
+    },
+    name: {
+      type: 'String',
+      required: true
+    }
+  });
+  MagicSet = mongoose.model('MagicSet', MagicSetSchema, 'magicSets');
 
   MagicCollectionSchema = new mongoose.Schema({
     total: {
