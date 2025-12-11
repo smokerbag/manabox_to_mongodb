@@ -129,8 +129,13 @@ async function processBatch(records) {
       newCard.name = card.name;
       newCard.setCode = card.set;
       newCard.setName = card.set_name;
-      newCard.rarity = card.rarity;
+      newCard.rarity = card.rarity.substring(0,1);
       newCard.layout = card.layout;
+      if (card.color_identity && card.color_identity.length > 0) {
+        newCard.colorIdentity = card.color_identity;
+      } else {
+        newCard.colorIdentity = ['N'];
+      }
       totalPrice += newCard.price * newCard.quantity;
       totalCards = totalCards + Number(newCard.quantity);
       if (card.image_uris) {
@@ -220,65 +225,68 @@ async function connectToDb() {
 
   MagicCardSchema = new mongoose.Schema({
     name: {
-      type: 'String',
+      type: String,
       required: true
     },
     setCode: {
-      type: 'String',
+      type: String,
       required: true
     },
     setName: {
-      type: 'String',
+      type: String,
       required: true
     },
     quantity: {
-      type: 'Number',
+      type: Number,
       required: true
     },
     price: {
-      type: 'Number',
+      type: Number,
       required: true
     },
     rarity: {
-      type: 'String',
+      type: String,
       required: true
     },
     foil: {
-      type: 'Boolean',
+      type: Boolean,
       required: true
     },
     manaboxId: {
-      type: 'String',
+      type: String,
       required: true
     },
     scryfallId: {
-      type: 'String',
+      type: String,
       required: true
+    },
+    colorIdentity: {
+      type: [String]
     },
     images: {
       front: {
         small: {
-          type: 'String',
+          type: String,
           required: true
         },
         normal: {
-          type: 'String',
+          type: String,
           required: true
         },
         large: {
-          type: 'String',
+          type: String,
           required: true
         }
       },
       back: {
         small: {
-          type: 'String'
+          type: String
         },
         normal: {
-          type: 'String'
+          type: String
         },
         large: {
-          type: 'String'
+          type: String
         }
       }
     }
@@ -287,6 +295,7 @@ async function connectToDb() {
 
   let res = await MagicCollection.deleteMany({});
   res = await MagicCard.deleteMany({});
+  res = await MagicSet.deleteMany({});
 }
 
 (async () => {
